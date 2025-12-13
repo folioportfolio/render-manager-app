@@ -1,8 +1,7 @@
 import { io } from "socket.io-client";
 import { RenderJob } from "../types/types";
 
-const HOSTNAME = "http://192.168.100.152:7777";
-//const HOSTNAME = "http://localhost:7777";
+const HOSTNAME = process.env.EXPO_PUBLIC_API_HOST;
 const API_GET = "api/render"
 
 export const socket = io(HOSTNAME);
