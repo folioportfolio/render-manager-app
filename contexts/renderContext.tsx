@@ -1,0 +1,100 @@
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { getRenderJobs, socket } from "../hooks/serverFetcher";
+import { RenderJob } from "../types/types";
+
+interface RenderContextValue {
+    jobs: Map<string, RenderJob>;
+    setJobs: React.Dispatch<React.SetStateAction<Map<string, RenderJob>>>;
+}
+
+interface RenderProviderProps {
+    children: ReactNode;
+}
+
+export const RenderContext = createContext<RenderContextValue | null>(null);
+
+export const RenderProvider = ({ children }: RenderProviderProps) => {
+    const [jobs, setJobs] = useState<Map<string, RenderJob>>(new Map());
+
+    const initJobs = async () => {
+        const map = new Map<string, RenderJob>();
+        const jobs = await getRenderJobs();
+
+        if (jobs) {
+            jobs.forEach(element => {
+                map.set(element.id, element);
+            });
+        }
+
+        setJobs(map);
+    }
+
+    const onRenderStart = (data: { jobId: string, job: RenderJob }) => {
+        console.log(`Render start - ${JSON.stringify(data)}`);
+        setJobs(prev => {
+            const next = new Map(prev);
+            next.set(data.jobId, data.job);
+            return next;
+        });
+    }
+
+    const onFrameUpdate = (data: { jobId: string, frame: number }) => {
+        console.log(`Render frame - ${JSON.stringify(data)}`);
+        setJobs(prev => {
+            const next = new Map(prev);
+            const job = next.get(data.jobId);
+
+            if (job) {
+                next.set(data.jobId, {
+                    ...job,
+                    currentFrame: data.frame,
+                    timeLastFrame: new Date(),
+                    state: "inProgress"
+                });
+            }
+
+            return next;
+        });
+    }
+
+    const onRenderEnd = (data: { jobId: string}) => {
+        console.log(`Render end - ${JSON.stringify(data)}`);
+        setJobs(prev => {
+            const next = new Map(prev);
+            const job = next.get(data.jobId);
+
+            if (job) {
+                next.set(data.jobId, {
+                    ...job,
+                    state: "finished"
+                });
+            }
+
+            return next;
+        });
+    }
+
+    useEffect(() => {
+        initJobs();
+
+        socket.on("render-start", onRenderStart);
+        socket.on("frame-update", onFrameUpdate);
+        socket.on("render-end", onRenderEnd);
+
+        return () => {
+            socket.off("render-start");
+            socket.off("frame-update");
+            socket.off("render-end");
+        }
+    }, []);
+
+    return (
+        <RenderContext.Provider value={{ jobs, setJobs }}>
+            {children}
+        </RenderContext.Provider>
+    );
+}
+
+export function useRenderJobs() {
+    return useContext(RenderContext);
+}
