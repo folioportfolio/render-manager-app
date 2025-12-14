@@ -1,4 +1,10 @@
-import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import {
+    createContext,
+    ReactNode,
+    useContext,
+    useEffect,
+    useState,
+} from "react";
 import { getRenderJobs, socket } from "../hooks/serverFetcher";
 import { RenderJob, RenderState } from "../types/types";
 
@@ -17,30 +23,34 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
     const [jobs, setJobs] = useState<Map<string, RenderJob>>(new Map());
 
     const initJobs = async () => {
-        const map = new Map<string, RenderJob>();
-        const jobs = await getRenderJobs();
+        try {
+            const map = new Map<string, RenderJob>();
+            const jobs = await getRenderJobs();
 
-        if (jobs) {
-            jobs.forEach(element => {
-                map.set(element.id, element);
-            });
+            if (jobs) {
+                jobs.forEach((element) => {
+                    map.set(element.id, element);
+                });
+            }
+
+            setJobs(map);
+        } catch (error) {
+            console.log(error);
         }
+    };
 
-        setJobs(map);
-    }
-
-    const onRenderStart = (data: { jobId: string, job: RenderJob }) => {
+    const onRenderStart = (data: { jobId: string; job: RenderJob }) => {
         console.log(`Render start - ${JSON.stringify(data)}`);
-        setJobs(prev => {
+        setJobs((prev) => {
             const next = new Map(prev);
             next.set(data.jobId, data.job);
             return next;
         });
-    }
+    };
 
-    const onFrameUpdate = (data: { jobId: string, frame: number }) => {
+    const onFrameUpdate = (data: { jobId: string; frame: number }) => {
         console.log(`Render frame - ${JSON.stringify(data)}`);
-        setJobs(prev => {
+        setJobs((prev) => {
             const next = new Map(prev);
             const job = next.get(data.jobId);
 
@@ -49,30 +59,30 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
                     ...job,
                     currentFrame: data.frame,
                     timeLastFrame: new Date(),
-                    state: "inProgress"
+                    state: "inProgress",
                 });
             }
 
             return next;
         });
-    }
+    };
 
-    const onRenderEnd = (data: { jobId: string, state: RenderState }) => {
+    const onRenderEnd = (data: { jobId: string; state: RenderState }) => {
         console.log(`Render end - ${JSON.stringify(data)}`);
-        setJobs(prev => {
+        setJobs((prev) => {
             const next = new Map(prev);
             const job = next.get(data.jobId);
 
             if (job) {
                 next.set(data.jobId, {
                     ...job,
-                    state: data.state
+                    state: data.state,
                 });
             }
 
             return next;
         });
-    }
+    };
 
     useEffect(() => {
         initJobs();
@@ -85,7 +95,7 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
             socket.off("render-start");
             socket.off("frame-update");
             socket.off("render-end");
-        }
+        };
     }, []);
 
     return (
@@ -93,7 +103,7 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
             {children}
         </RenderContext.Provider>
     );
-}
+};
 
 export function useRenderJobs() {
     return useContext(RenderContext);
