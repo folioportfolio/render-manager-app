@@ -58,7 +58,7 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
                 next.set(data.jobId, {
                     ...job,
                     currentFrame: data.frame,
-                    timeLastFrame: new Date(),
+                    timeLastFrame: Date.now() / 1000,
                     state: "inProgress",
                 });
             }

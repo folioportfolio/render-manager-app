@@ -11,8 +11,8 @@ export interface RenderInfoProps {
     frameStart: number;
     frameEnd: number;
     currentFrame?: number;
-    timeStart: Date;
-    timeEnd?: Date;
+    timeStart: number;
+    timeEnd?: number;
     lastFrameDuration?: number;
     project: string,
     state: RenderState
@@ -45,7 +45,7 @@ export default function RenderInfo({ id, timeStart, frameStart, frameEnd, curren
             <Card style={styles.container}>
                 <Text style={styles.nameLabel}>Render {project.substring(project.lastIndexOf("\\") + 1)}</Text>
                 <Text>Total frames: {frameEnd - frameStart + 1}</Text>
-                <Text>Start time: {format(timeStart, "dd.MM.yyyy HH:mm:ss")}</Text>
+                <Text>Start time: {format(new Date(timeStart * 1000), "dd.MM.yyyy HH:mm:ss")}</Text>
                 <Text>Current frame: {currentFrame ?? '-'}</Text>
 
                 <View style={styles.progressBar}>
