@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { getRenderJobs, socket } from "../hooks/serverFetcher";
-import { RenderJob } from "../types/types";
+import { RenderJob, RenderState } from "../types/types";
 
 interface RenderContextValue {
     jobs: Map<string, RenderJob>;
@@ -57,7 +57,7 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
         });
     }
 
-    const onRenderEnd = (data: { jobId: string}) => {
+    const onRenderEnd = (data: { jobId: string, state: RenderState }) => {
         console.log(`Render end - ${JSON.stringify(data)}`);
         setJobs(prev => {
             const next = new Map(prev);
@@ -66,7 +66,7 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
             if (job) {
                 next.set(data.jobId, {
                     ...job,
-                    state: "finished"
+                    state: data.state
                 });
             }
 
