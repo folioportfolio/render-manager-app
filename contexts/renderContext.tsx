@@ -5,7 +5,7 @@ import {
     useEffect,
     useState,
 } from "react";
-import { getRenderJobs, socket } from "../hooks/serverFetcher";
+import { getRenderJobs, getSocket } from "../hooks/serverFetcher";
 import { RenderJob, RenderState } from "../types/types";
 
 interface RenderContextValue {
@@ -86,6 +86,8 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
 
     useEffect(() => {
         initJobs();
+
+        const socket = getSocket();
 
         socket.on("render-start", onRenderStart);
         socket.on("frame-update", onFrameUpdate);
