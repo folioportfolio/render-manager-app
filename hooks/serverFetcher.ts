@@ -17,7 +17,8 @@ export const getSocket = () => {
 };
 
 export const getRenderJobs = async (): Promise<RenderJob[]> => {
-    const response = await fetch(`${SCHEMA}://${HOSTNAME}/${API_GET}`);
+    const url = `${SCHEMA}://${HOSTNAME}/${API_GET}`;
+    const response = await fetch(url);
     const json = await response.json();
     console.log(json);
 

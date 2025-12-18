@@ -7,6 +7,7 @@ import {
 } from "react";
 import { getRenderJobs, getSocket } from "../hooks/serverFetcher";
 import { RenderJob, RenderState } from "../types/types";
+import { Platform } from "react-native";
 
 interface RenderContextValue {
     jobs: Map<string, RenderJob>;
@@ -36,6 +37,8 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
             setJobs(map);
         } catch (error) {
             console.log(error);
+            if (Platform.OS == "android")
+                alert(error)
         }
     };
 
