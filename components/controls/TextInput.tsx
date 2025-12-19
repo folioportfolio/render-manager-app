@@ -1,49 +1,79 @@
-import { View, StyleSheet, StyleProp, ViewStyle, TextInput as ReactText } from "react-native";
+import { TextInput as ReactInput, TextInputProps as ReactInputProps, Text, StyleProp, StyleSheet, View, ViewStyle, BlurEvent, FocusEvent} from "react-native";
 import { theme } from "../../themes/themes";
-import { useState, ComponentProps } from "react";
-import React from "react";
+import { useRef, useState } from "react";
 
-export type TextInputProps {
+export interface TextInputProps extends ReactInputProps {
+    label?: string;
     style?: StyleProp<ViewStyle>;
-    value?: string;
-} & ComponentProps<typeof TextInput>;
+    onCommit?: (v: string) => void;
+}
 
-const TextInput = ({ value, style }: TextInputProps) => {
-    const [tmpValue, setTmpValue] = useState(value);
+const TextInput = ({defaultValue, label, style, onCommit, ...props}: TextInputProps) => {
+    const [isFocused, setIsFocused] = useState(false);
+    const [tmpValue, setTmpValue] = useState(defaultValue ?? "");
+    const initialValue = useRef("");
 
-    const commit = (e: React.InputEvent<HTMLInputElement>) => {
-
+    const onFocus = (e: FocusEvent) => {
+        setIsFocused(true);
+        initialValue.current = tmpValue;
+        props.onFocus?.(e);
     }
 
-    const onKeyPressed = (e: React.InputEvent<HTMLInputElement>) => {
+    const onBlur = (e: BlurEvent) => {
+        setIsFocused(false);
 
+        if (initialValue.current !== tmpValue)
+            onCommit?.(tmpValue);
+        
+        props.onBlur?.(e);
     }
-    
-    const onValueChanged = (e: React.InputEvent<HTMLInputElement>) => {
 
-    }
     return (
         <>
-            <View style={[styles.wrapper, style]}>
-                <ReactText style={styles.input} value={tmpValue} onBlur={commit} onKeyPress={onKeyPressed} onChange={onValueChanged} />
+            <View style={style}>
+                {label && <Text style={isFocused ? [styles.inputLabel, styles.inputLabelFocused] : styles.inputLabel}>{label}</Text>}
+
+                <View style={isFocused ? [styles.inputWrapper, styles.focusedShadow] : [styles.inputWrapper, styles.shadow]}>
+                    <ReactInput {...props} value={tmpValue} style={styles.input} onChangeText={setTmpValue} onFocus={onFocus} onBlur={onBlur}/>
+                </View>
             </View>
         </>
     );
 }
 
 const styles = StyleSheet.create({
-    wrapper: {
-        backgroundColor: theme.background,
+    inputWrapper: {
+        height: 40,
+        borderWidth: 3,
         borderColor: theme.borderColor,
-        borderWidth: theme.borderThickness
+        marginTop: 5,
+        paddingLeft: 10
     },
     input: {
-        padding: 5,
-        margin: 0,
-        flex: 1,
-        borderWidth: 0,
-        outlineWidth: 0,
-        outlineStyle: undefined
+        outlineStyle: "none" as any,
+        flex: 1
+    },
+    inputLabel: {
+        fontWeight: 400,
+        fontSize: 16
+    },
+    inputLabelFocused: {
+        fontWeight: 600
+    },
+    shadow: {
+        boxShadow: [{
+            offsetX: 5,
+            offsetY: 5,
+            blurRadius: 0,
+            spreadDistance: 0,
+            color: theme.shadow,
+        }]
+    },
+    focusedShadow: {
+        boxShadow: [{
+            offsetX: 2,
+            offsetY: 2
+        }]
     }
 });
 

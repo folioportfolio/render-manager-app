@@ -8,6 +8,7 @@ import {
 import { getRenderJobs, getSocket } from "../hooks/serverFetcher";
 import { RenderJob, RenderState } from "../types/types";
 import { Platform } from "react-native";
+import { Socket } from "socket.io-client";
 
 interface RenderContextValue {
     jobs: Map<string, RenderJob>;
@@ -88,18 +89,27 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
     };
 
     useEffect(() => {
+        let active = true;
+        let socket: Socket | null = null;
+
         initJobs();
+        getSocket().then(s => {
+            if (!active)
+                return;
 
-        const socket = getSocket();
+            socket = s;
 
-        socket.on("render-start", onRenderStart);
-        socket.on("frame-update", onFrameUpdate);
-        socket.on("render-end", onRenderEnd);
+            s.on("render-start", onRenderStart);
+            s.on("frame-update", onFrameUpdate);
+            s.on("render-end", onRenderEnd);
+        });
 
         return () => {
-            socket.off("render-start");
-            socket.off("frame-update");
-            socket.off("render-end");
+            active = false;
+
+            socket?.off("render-start");
+            socket?.off("frame-update");
+            socket?.off("render-end");
         };
     }, []);
 
