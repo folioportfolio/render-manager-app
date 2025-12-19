@@ -12,39 +12,60 @@ import Card from "../controls/Card";
 import TextInput from "../controls/TextInput";
 import { getUserData, setUserData } from "../../hooks/userSettings";
 import { useEffect, useState } from "react";
+import Button from "../controls/Button";
+import { theme } from "../../themes/themes";
 
-const settingsInputs : SettingsInput[] = [
-    { key: "schema", label: "Schema", type: "text", default: process.env.EXPO_PUBLIC_API_SCHEMA },
-    { key: "hostname", label: "Hostname", type: "text", default: process.env.EXPO_PUBLIC_API_HOST },
-    { key: "port", label: "Port", type: "text", default: process.env.EXPO_PUBLIC_API_PORT },
-];
+const settingsInputs : Map<SettingsKeys, SettingsInput> = new Map([
+    ["schema", { key: "schema", label: "Schema", type: "text", default: process.env.EXPO_PUBLIC_API_SCHEMA }],
+    ["hostname", { key: "hostname", label: "Hostname", type: "text", default: process.env.EXPO_PUBLIC_API_HOST }],
+    ["port", { key: "port", label: "Port", type: "text", default: process.env.EXPO_PUBLIC_API_PORT }],
+]);
 
 export default function SettingsView() {
-    const [settings, setSettings] = useState<SettingsInput[]>([]);
+    const [defaultSettings, setDefaultSettings] = useState<Map<SettingsKeys, string>>(() => new Map());
+    const [settings, setSettings] = useState<Map<SettingsKeys, string>>(() => new Map());
 
-    const saveSetting = (s: SettingsInput, v: string) => {
-        const value = s.process ? s.process(v) : v;
+    const saveSettings = () => {
+        for (const key of settingsInputs.keys()) {
+            const k = key as SettingsKeys;
 
-        if (value) {
-            console.log(value);
-            setUserData(s.key, value);
+            if (!k)
+                continue;
+
+            const definition = settingsInputs.get(k);
+            const defaultValue = defaultSettings.get(k);
+            const value = settings.get(k) ?? defaultValue;
+
+            if (definition && defaultValue && value){
+                const processedValue = definition?.process ? definition.process(value) : value;
+                setUserData(k, processedValue);
+            }
         }
-    };
+
+        setDefaultSettings(settings);
+    }
+
+    const resetSettings = () => {
+        setSettings(defaultSettings);
+        setDefaultSettings(new Map(defaultSettings));
+    }
 
     const loadSettings = async () => {
-        let result: SettingsInput[] = [];
+        const result: Map<SettingsKeys, string> = new Map();
 
-        for (const s of settingsInputs) {
-            const defaultValue = await loadSetting(s.key, s.default);
-            result.push({...s, default: defaultValue});
+        for (const s of settingsInputs.keys()) {
+            const defaultValue = await loadSetting(s, settingsInputs.get(s)?.default);
+            result.set(s, defaultValue ?? "");
         }
 
+        setDefaultSettings(result);
         setSettings(result);
     }
 
     const loadSetting = async (key: SettingsKeys, defaultValue?: string): Promise<string | undefined> => {
         return await getUserData(key) ?? defaultValue;
     }
+
 
     useEffect(() => {
         loadSettings();
@@ -56,20 +77,34 @@ export default function SettingsView() {
                 <SafeAreaView style={{ flex: 1 }}>
                     <ScrollView>
                         <Card style={styles.settingsCard}>
-                            {settings.map((s) => {
+                            {Array.from(defaultSettings.keys()).map((s) => {
+                                const setting = settingsInputs.get(s);
                                 return (
-                                    <View key={s.key}>
+                                    <View key={s}>
                                         <TextInput
                                             style={styles.textInput}
-                                            label={s.label}
-                                            defaultValue={s.default}
-                                            onCommit={(e) =>
-                                                saveSetting(s, e)
+                                            label={setting?.label}
+                                            value={settings.get(s)}
+                                            onChangeText={(text) =>
+                                                setSettings(prev => {
+                                                    const next = new Map(prev);
+                                                    next.set(s, text);
+                                                    return next;
+                                                })
                                             }
                                         />
                                     </View>
                                 );
                             })}
+
+                            <View style={styles.buttonPanel}>
+                                <Button onPress={saveSettings}>
+                                    <Text>Apply</Text>
+                                </Button>
+                                <Button onPress={resetSettings} style={{backgroundColor: theme.background}}>
+                                    <Text>Cancel</Text>
+                                </Button>
+                            </View>
                         </Card>
                     </ScrollView>
                 </SafeAreaView>
@@ -84,7 +119,8 @@ const styles = StyleSheet.create({
         marginRight: 15,
         marginTop: 20,
         marginBottom: 10,
-        paddingVertical: 10,
+        paddingTop: 10,
+        paddingBottom: 30,
         paddingHorizontal: 10,
     },
     settingsLabel: {
@@ -94,4 +130,9 @@ const styles = StyleSheet.create({
     textInput: {
         marginVertical: 10,
     },
+    buttonPanel: {
+        flexDirection: "row",
+        justifyContent: "flex-end",
+        paddingHorizontal: 5
+    }
 });

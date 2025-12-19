@@ -3,7 +3,7 @@ export interface SettingsInput {
     key: SettingsKeys,
     default?: string;
     type: "text" | "number",
-    process?: (v: string) => void
+    process?: (v: string) => string
 }
 
 export type SettingsKeys = "schema" | "hostname" | "port";

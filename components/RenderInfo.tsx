@@ -54,7 +54,7 @@ export default function RenderInfo({ id, timeStart, frameStart, frameEnd, curren
                         value={currentFrame ?? frameEnd}
                         min={frameStart}
                         max={frameEnd}
-                        color={finished ? (canceled ? theme.canceled : theme.done) : theme.accent} />
+                        color={finished ? (canceled ? theme.canceled : theme.done) : theme.inProgress} />
                 </View>
 
                 <Text style={styles.smallText}>{project}</Text>
