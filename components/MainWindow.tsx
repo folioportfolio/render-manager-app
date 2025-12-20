@@ -12,7 +12,7 @@ export default function MainWindow() {
             <Tab.Navigator screenOptions={{
                 headerShown: false,
                 tabBarStyle: styles.tabBar,
-                tabBarLabelStyle: styles.tabBarLabel,
+                tabBarLabelStyle: styles.tabBarLabel, 
                 tabBarAllowFontScaling: true
             }}>
                 <Tab.Screen component={RenderBrowserView} name="Browser" options={{ tabBarIconStyle: styles.tabBarIcon }} />
@@ -25,12 +25,14 @@ export default function MainWindow() {
 const styles = StyleSheet.create({
     tabBar: {
         borderColor: theme.borderColor,
-        borderTopWidth: theme.borderThickness
+        borderTopWidth: theme.borderThickness,
+        height: 90
     },
     tabBarLabel: {
         color: theme.color,
         fontWeight: 600,
-        fontSize: 16
+        fontSize: 16,
+        marginTop: 10
     },
     tabBarIcon: {
         display: "none"

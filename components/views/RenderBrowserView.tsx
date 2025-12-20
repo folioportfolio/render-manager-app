@@ -28,7 +28,7 @@ export default function RenderBrowserView() {
     return (
         <>
             <View style={{ flex: 1 }}>
-                <SafeAreaView style={{ flex: 1 }}>
+                <SafeAreaView style={{ flex: 1 }} edges={{bottom: "off", top: "maximum"}}>
                     <ScrollView refreshControl={
                         <RefreshControl refreshing={refreshing}
                                         onRefresh={async () => {

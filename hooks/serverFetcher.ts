@@ -24,9 +24,6 @@ export const useFetcher = () => {
     }, [hostname]);
 
     const getSocket = useCallback(() => {
-        if (!socketRef.current) {
-            throw new Error("Socket not initialized yet");
-        }
         return socketRef.current;
     }, []);
 

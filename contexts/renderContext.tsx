@@ -97,6 +97,9 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
     useEffect(() => {
         const socket = getSocket();
 
+        if (!socket)
+            return;
+
         initJobs();
 
         socket.on("render-start", onRenderStart);
