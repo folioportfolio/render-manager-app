@@ -5,14 +5,15 @@ import {
     useEffect,
     useState,
 } from "react";
-import { getRenderJobs, getSocket } from "../hooks/serverFetcher";
+import { useFetcher } from "../hooks/serverFetcher";
 import { RenderJob, RenderState } from "../types/types";
 import { Platform } from "react-native";
-import { Socket } from "socket.io-client";
+import { useServerStore } from "../components/store/serverStore";
 
 interface RenderContextValue {
     jobs: Map<string, RenderJob>;
     setJobs: React.Dispatch<React.SetStateAction<Map<string, RenderJob>>>;
+    refresh: () => Promise<void>;
 }
 
 interface RenderProviderProps {
@@ -23,6 +24,8 @@ export const RenderContext = createContext<RenderContextValue | null>(null);
 
 export const RenderProvider = ({ children }: RenderProviderProps) => {
     const [jobs, setJobs] = useState<Map<string, RenderJob>>(new Map());
+    const hostname = useServerStore((s) => s.hostname);
+    const {getRenderJobs, getSocket} = useFetcher();
 
     const initJobs = async () => {
         try {
@@ -38,9 +41,12 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
             setJobs(map);
         } catch (error) {
             console.log(error);
-            if (Platform.OS == "android")
-                alert(error)
+            setJobs(new Map());
         }
+    };
+
+    const refresh = async () => {
+        await initJobs();
     };
 
     const onRenderStart = (data: { jobId: string; job: RenderJob }) => {
@@ -89,32 +95,27 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
     };
 
     useEffect(() => {
-        let active = true;
-        let socket: Socket | null = null;
+        const socket = getSocket();
 
         initJobs();
-        getSocket().then(s => {
-            if (!active)
-                return;
 
-            socket = s;
-
-            s.on("render-start", onRenderStart);
-            s.on("frame-update", onFrameUpdate);
-            s.on("render-end", onRenderEnd);
-        });
+        socket.on("render-start", onRenderStart);
+        socket.on("frame-update", onFrameUpdate);
+        socket.on("render-end", onRenderEnd);
 
         return () => {
-            active = false;
-
             socket?.off("render-start");
             socket?.off("frame-update");
             socket?.off("render-end");
         };
-    }, []);
+    }, [getSocket]);
+
+    useEffect(() => {
+        refresh();
+    }, [hostname]);
 
     return (
-        <RenderContext.Provider value={{ jobs, setJobs }}>
+        <RenderContext.Provider value={{ jobs, setJobs, refresh }}>
             {children}
         </RenderContext.Provider>
     );

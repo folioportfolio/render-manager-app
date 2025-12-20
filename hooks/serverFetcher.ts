@@ -1,53 +1,42 @@
 import { io, Socket } from "socket.io-client";
 import { RenderJob } from "../types/types";
-import { getUserData } from "./userSettings";
+import { useServerStore } from "../components/store/serverStore";
+import { useCallback, useEffect, useRef } from "react";
 
 const API_GET = "api/render";
 
-let socket: Socket | null = null;
-let socketPromise: Promise<Socket> | null = null;
+export const useFetcher = () => {
+    const socketRef = useRef<Socket | null>(null);
+    
+    const hostname = useServerStore((s) => s.hostname);
 
-const getHostname = async () => {
-    const schema = await getUserData(
-        "schema",
-        process.env.EXPO_PUBLIC_API_SCHEMA
-    );
-    const hostname = await getUserData(
-        "hostname",
-        process.env.EXPO_PUBLIC_API_HOST
-    );
-    const port = await getUserData("port", process.env.EXPO_PUBLIC_API_PORT);
+    useEffect(() => {
+        if (!hostname) 
+            return;
 
-    return `${schema}://${hostname}${port && `:${port}`}`;
-};
+        const socket = io(hostname, { transports: ["websocket"] });
+        socketRef.current = socket;
 
-const createSocket = async (): Promise<Socket> => {
-    const hostname = await getHostname();
+        return () => {
+            socket.disconnect();
+            socketRef.current = null;
+        };
+    }, [hostname]);
 
-    return io(hostname, {
-        transports: ["websocket"],
-    });
-};
+    const getSocket = useCallback(() => {
+        if (!socketRef.current) {
+            throw new Error("Socket not initialized yet");
+        }
+        return socketRef.current;
+    }, []);
 
-export const getSocket = (): Promise<Socket> => {
-    if (socket) 
-        return Promise.resolve(socket);
+    const getRenderJobs = useCallback(async (): Promise<RenderJob[]> => {
+        if (!hostname) 
+            throw new Error("No server configured");
 
-    if (!socketPromise) {
-        socketPromise = createSocket().then((s) => {
-            socket = s;
-            return s;
-        });
-    }
+        const response = await fetch(`${hostname}/${API_GET}`);
+        return await response.json();
+    }, [hostname]);
 
-    return socketPromise;
-};
-
-export const getRenderJobs = async (): Promise<RenderJob[]> => {
-    const url = `${await getHostname()}/${API_GET}`;
-    const response = await fetch(url);
-    const json = await response.json();
-    console.log(json);
-
-    return json;
+    return {getSocket, getRenderJobs}
 };

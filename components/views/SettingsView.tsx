@@ -14,16 +14,17 @@ import { getUserData, setUserData } from "../../hooks/userSettings";
 import { useEffect, useState } from "react";
 import Button from "../controls/Button";
 import { theme } from "../../themes/themes";
-
-const settingsInputs : Map<SettingsKeys, SettingsInput> = new Map([
-    ["schema", { key: "schema", label: "Schema", type: "text", default: process.env.EXPO_PUBLIC_API_SCHEMA }],
-    ["hostname", { key: "hostname", label: "Hostname", type: "text", default: process.env.EXPO_PUBLIC_API_HOST }],
-    ["port", { key: "port", label: "Port", type: "text", default: process.env.EXPO_PUBLIC_API_PORT }],
-]);
+import { useServerStore } from "../store/serverStore";
 
 export default function SettingsView() {
     const [defaultSettings, setDefaultSettings] = useState<Map<SettingsKeys, string>>(() => new Map());
     const [settings, setSettings] = useState<Map<SettingsKeys, string>>(() => new Map());
+    
+    const setHostname = useServerStore((s) => s.setHostname);
+
+    const settingsInputs : Map<SettingsKeys, SettingsInput> = new Map([
+        ["hostname", { key: "hostname", label: "Hostname", type: "text", default: process.env.EXPO_PUBLIC_API_HOST, process: (s: string) => {setHostname(s); return s} }],
+    ]);
 
     const saveSettings = () => {
         for (const key of settingsInputs.keys()) {

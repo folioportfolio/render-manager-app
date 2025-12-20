@@ -1,28 +1,23 @@
-import { Text, StyleSheet, ScrollView, View, Platform } from "react-native";
+import { Text, StyleSheet, ScrollView, View, Platform, RefreshControl } from "react-native";
 import RenderInfo from "../RenderInfo";
 import { useRenderJobs } from "../../contexts/renderContext";
 import { RenderJob } from "../../types/types";
 import Card from "../controls/Card";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useMemo, useState } from "react";
 
 export default function RenderBrowserView() {
     const renderContext = useRenderJobs();
+    const [refreshing, setRefreshing] = useState(false);
 
     if (!renderContext)
         return null;
 
-    const getJobsByTime = (): RenderJob[] => {
-        return Array.from(renderContext.jobs.values()).sort((a, b) => {
-            if (a.timeStart < b.timeStart)
-                return 1;
-            else if (a.timeStart > b.timeStart)
-                return -1;
-            else
-                return 0;
-        });
-    }
-
-    const allJobs = getJobsByTime();
+    const allJobs = useMemo(() => {
+        return Array.from(renderContext.jobs.values()).sort((a, b) =>
+            b.timeStart - a.timeStart
+        );
+    }, [renderContext.jobs]);
 
     const runningStates = ["inProgress", "started"];
     const doneStates = ["finished", "canceled"]
@@ -34,8 +29,14 @@ export default function RenderBrowserView() {
         <>
             <View style={{ flex: 1 }}>
                 <SafeAreaView style={{ flex: 1 }}>
-
-                    <ScrollView>
+                    <ScrollView refreshControl={
+                        <RefreshControl refreshing={refreshing}
+                                        onRefresh={async () => {
+                                            setRefreshing(true);
+                                            await renderContext.refresh();
+                                            setRefreshing(false);
+                                        }}/>
+                        }>
                         {inProgressJobs.length > 0 &&
                             <View>
                                 <Card style={styles.headerCard}>

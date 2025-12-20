@@ -29,7 +29,8 @@ const styles = StyleSheet.create({
     },
     tabBarLabel: {
         color: theme.color,
-        fontWeight: 600
+        fontWeight: 600,
+        fontSize: 16
     },
     tabBarIcon: {
         display: "none"
