@@ -15,7 +15,7 @@ export interface Theme {
 
 export const theme: Theme = {
         accent: '#ffd900',
-        accentDark: '#e9c600',
+        accentDark: '#efbc14ff',
         accentLight: '#ffe23b',
         background: '#fff',
         activeBackground: '#e6fbffff',
