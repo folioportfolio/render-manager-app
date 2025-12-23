@@ -14,6 +14,7 @@ interface RenderContextValue {
     jobs: Map<string, RenderJob>;
     setJobs: React.Dispatch<React.SetStateAction<Map<string, RenderJob>>>;
     refresh: () => Promise<void>;
+    loadMoreJobs: () => Promise<void>;
 }
 
 interface RenderProviderProps {
@@ -24,8 +25,9 @@ export const RenderContext = createContext<RenderContextValue | null>(null);
 
 export const RenderProvider = ({ children }: RenderProviderProps) => {
     const [jobs, setJobs] = useState<Map<string, RenderJob>>(new Map());
+    const [cursor, setCursor] = useState<string | null>(null);
     const hostname = useServerStore((s) => s.hostname);
-    const {getRenderJobs, getSocket} = useFetcher();
+    const {getRenderJobs, getMoreRenderJobs, getSocket} = useFetcher();
 
     const initJobs = async () => {
         try {
@@ -38,6 +40,7 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
                 });
             }
 
+            setCursor(jobs?.at(-1)?.id ?? null);
             setJobs(map);
         } catch (error) {
             console.log(error);
@@ -48,6 +51,28 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
     const refresh = async () => {
         await initJobs();
     };
+
+    const loadMoreJobs = async () => {
+        if (!cursor)
+            return;
+
+        const nextJobs = await getMoreRenderJobs(cursor);
+
+        if (!nextJobs) 
+            return;
+
+        setJobs(prev => {
+            const next = new Map(prev);
+            for (const job of nextJobs) {
+                next.set(job.id, job);
+            }
+
+            console.log(`Loaded more: ${nextJobs.length}`)
+            return next;
+        })
+
+        setCursor(nextJobs?.at(-1)?.id ?? null)
+    }
 
     const onRenderStart = (data: { jobId: string; job: RenderJob }) => {
         console.log(`Render start - ${JSON.stringify(data)}`);
@@ -114,11 +139,12 @@ export const RenderProvider = ({ children }: RenderProviderProps) => {
     }, [getSocket]);
 
     useEffect(() => {
+        setCursor(null);
         refresh();
     }, [hostname]);
 
     return (
-        <RenderContext.Provider value={{ jobs, setJobs, refresh }}>
+        <RenderContext.Provider value={{ jobs, setJobs, refresh, loadMoreJobs }}>
             {children}
         </RenderContext.Provider>
     );

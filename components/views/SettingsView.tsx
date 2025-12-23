@@ -99,10 +99,10 @@ export default function SettingsView() {
                             })}
 
                             <View style={styles.buttonPanel}>
-                                <Button onPress={saveSettings}>
+                                <Button style={styles.button} onPress={saveSettings}>
                                     <Text>Apply</Text>
                                 </Button>
-                                <Button onPress={resetSettings} style={{backgroundColor: theme.background}}>
+                                <Button onPress={resetSettings} style={[styles.button, {backgroundColor: theme.background}]}>
                                     <Text>Cancel</Text>
                                 </Button>
                             </View>
@@ -134,6 +134,8 @@ const styles = StyleSheet.create({
     buttonPanel: {
         flexDirection: "row",
         justifyContent: "flex-end",
-        paddingHorizontal: 5
+    },
+    button: {
+        marginRight: 0
     }
 });

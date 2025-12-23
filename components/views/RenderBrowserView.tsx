@@ -36,7 +36,7 @@ export default function RenderBrowserView() {
         }
     ];
 
-    const getHeader = ({section}: {section: { title: string, data: RenderJob[] }}): React.ReactElement | null => {
+    const getHeader = ({ section }: { section: { title: string, data: RenderJob[] } }): React.ReactElement | null => {
         if (section.data.length <= 0)
             return null;
 
@@ -47,38 +47,43 @@ export default function RenderBrowserView() {
         );
     }
 
-    const getRenderItem = ({ item }: { item: RenderJob }): React.ReactElement | null  => {
+    const getRenderItem = ({ item }: { item: RenderJob }): React.ReactElement | null => {
         return (
             <RenderInfo id={item.id}
-                        finished={doneStates.includes(item.state)}
-                        canceled={item.state === "canceled"}
-                        state={item.state}
-                        currentFrame={item.currentFrame}
-                        frameEnd={item.frameEnd}
-                        frameStart={item.frameStart}
-                        timeStart={item.timeStart}
-                        timeEnd={item.timeLastFrame}
-                        project={item.project} />
+                finished={doneStates.includes(item.state)}
+                canceled={item.state === "canceled"}
+                state={item.state}
+                currentFrame={item.currentFrame}
+                frameEnd={item.frameEnd}
+                frameStart={item.frameStart}
+                timeStart={item.timeStart}
+                timeEnd={item.timeLastFrame}
+                project={item.project} />
         );
+    }
+
+    const loadMoreJobs = (info: { distanceFromEnd: number; }): void => {
+        renderContext.loadMoreJobs();
     }
 
     return (
         <>
             <View style={{ flex: 1 }}>
-                <SafeAreaView style={{ flex: 1 }} edges={{bottom: "off", top: "maximum"}}>
+                <SafeAreaView style={{ flex: 1 }} edges={{ bottom: "off", top: "maximum" }}>
                     <SectionList sections={items}
-                                 keyExtractor={x => x.id}
-                                 renderItem={getRenderItem}
-                                 renderSectionHeader={getHeader} />
-                    <ScrollView refreshControl={
-                        <RefreshControl refreshing={refreshing}
-                                        onRefresh={async () => {
-                                            setRefreshing(true);
-                                            await renderContext.refresh();
-                                            setRefreshing(false);
-                                        }}/>
-                        }>
-                    </ScrollView>
+                        keyExtractor={x => x.id}
+                        renderItem={getRenderItem}
+                        renderSectionHeader={getHeader}
+                        onEndReached={loadMoreJobs}
+                        onEndReachedThreshold={0.4}
+                        refreshControl={
+                            <RefreshControl refreshing={refreshing}
+                                onRefresh={async () => {
+                                    setRefreshing(true);
+                                    await renderContext.refresh();
+                                    setRefreshing(false);
+                                }} />
+                        } />
                 </SafeAreaView>
             </View>
         </>

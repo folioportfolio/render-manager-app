@@ -1,13 +1,14 @@
 import { io, Socket } from "socket.io-client";
 import { RenderJob } from "../types/types";
 import { useServerStore } from "../components/store/serverStore";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const API_GET = "api/render";
+const DEFAULT_COUNT = 10;
+const LOAD_COUNT = 5;
 
 export const useFetcher = () => {
     const socketRef = useRef<Socket | null>(null);
-    
     const hostname = useServerStore((s) => s.hostname);
 
     useEffect(() => {
@@ -31,9 +32,19 @@ export const useFetcher = () => {
         if (!hostname) 
             throw new Error("No server configured");
 
-        const response = await fetch(`${hostname}/${API_GET}`);
+        const response = await fetch(`${hostname}/${API_GET}?count=${DEFAULT_COUNT}`);
         return await response.json();
     }, [hostname]);
 
-    return {getSocket, getRenderJobs}
+    const getMoreRenderJobs = useCallback(async (cursor: string): Promise<RenderJob[]> => {
+        if (!hostname) 
+            throw new Error("No server configured");
+
+        let url = `${hostname}/${API_GET}?count=${LOAD_COUNT}&cursor=${cursor}`;
+
+        const response = await fetch(url);
+        return await response.json();
+    }, [hostname]);
+
+    return {getSocket, getRenderJobs, getMoreRenderJobs}
 };
